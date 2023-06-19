@@ -1,7 +1,13 @@
-name: publish
-on: [workflow_dispatch]
+name: build_ietf_artifacts
+on:
+  workflow_call:
+    inputs:
+      spec_filename:
+        description: 'Name of the file containing the spec (in MD format).'
+        required: true
+        type: string
 jobs:
-  build-artifacts:
+  build:
     runs-on: macOS-13
     steps:
       - run: echo "TMPDIR=${TMPDIR}" >> $GITHUB_ENV
@@ -15,24 +21,24 @@ jobs:
       - run: pip install xml2rfc
       - run: brew install enscript
       - uses: actions/checkout@v2.3.4 
-      - run: kramdown-rfc2629 draft-ietf-ippm-responsiveness.md > ${{ env.TMPDIR }}/draft-ietf-ippm-responsiveness.xml
-      - run: xml2rfc ${{ env.TMPDIR }}/draft-ietf-ippm-responsiveness.xml > ${{ env.TMPDIR }}/draft-ietf-ippm-responsiveness.txt
-      - run: xml2rfc --html ${{ env.TMPDIR }}/draft-ietf-ippm-responsiveness.xml > ${{ env.TMPDIR }}/draft-ietf-ippm-responsiveness.html
-      - run: enscript -B -o ${{ env.TMPDIR }}/draft-ietf-ippm-responsiveness.ps ${{ env.TMPDIR }}/draft-ietf-ippm-responsiveness.txt
-      - run: pstopdf ${{ env.TMPDIR }}/draft-ietf-ippm-responsiveness.ps
+      - run: kramdown-rfc2629 ${{ inputs.spec_filename }} > ${{ env.TMPDIR }}/${{ inputs.spec_filename }}.xml
+      - run: xml2rfc ${{ env.TMPDIR }}/${{ inputs.spec_filename }}.xml > ${{ env.TMPDIR }}/${{ inputs.spec_filename }}.txt
+      - run: xml2rfc --html ${{ env.TMPDIR }}/${{ inputs.spec_filename }}.xml > ${{ env.TMPDIR }}/${{ inputs.spec_filename }}.html
+      - run: enscript -B -o ${{ env.TMPDIR }}/${{ inputs.spec_filename }}.ps ${{ env.TMPDIR }}/${{ inputs.spec_filename }}.txt
+      - run: pstopdf ${{ env.TMPDIR }}/${{ inputs.spec_filename }}.ps
       - uses: actions/upload-artifact@v3
         with:
           name: Publication
-          path: ${{ env.TMPDIR }}/draft-ietf-ippm-responsiveness.xml
+          path: ${{ env.TMPDIR }}/${{ inputs.spec_filename }}.xml
       - uses: actions/upload-artifact@v3
         with:
           name: Publication
-          path: ${{ env.TMPDIR }}/draft-ietf-ippm-responsiveness.txt
+          path: ${{ env.TMPDIR }}/${{ inputs.spec_filename }}.txt
       - uses: actions/upload-artifact@v3
         with:
           name: Publication
-          path: ${{ env.TMPDIR }}/draft-ietf-ippm-responsiveness.pdf
+          path: ${{ env.TMPDIR }}/${{ inputs.spec_filename }}.pdf
       - uses: actions/upload-artifact@v3
         with:
           name: Publication
-          path: ${{ env.TMPDIR }}/draft-ietf-ippm-responsiveness.html
+          path: ${{ env.TMPDIR }}/${{ inputs.spec_filename }}.html
